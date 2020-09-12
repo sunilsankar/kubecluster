@@ -1,0 +1,16 @@
+- hosts: all
+  become: yes
+  tasks:
+  - name: ensure a list of packages installed
+    yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - epel-release
+      - sshpass
+  - name: Copy sshpass
+    shell:
+      cmd: sshpass -p "vagrant" scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no 192.168.30.200:/tmp/join-command /tmp/joincluster.sh 
+
+  - name: Join the node to cluster
+    command: sh /tmp/joincluster.sh

@@ -1,0 +1,120 @@
+- hosts: all
+  become: yes
+  tasks:
+  - name: selinux off
+    selinux:
+      state: disabled
+    register: task_result
+  
+  - name: Remove swapfile from /etc/fstab
+    mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+    with_items:
+        - swap
+        - none
+  - name: Disable swap
+    command: swapoff -a
+    when: ansible_swaptotal_mb > 0
+  
+  - name: ensure a list of packages installed
+    yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+      - sshpass 
+  - name: Enable sshd 
+    shell:
+      cmd: sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+  - name: reload sshd
+    systemd:
+       name: sshd
+       state: reloaded
+  - name: Add  docker-ce repository
+    get_url:
+      url: "https://download.docker.com/linux/centos/docker-ce.repo"
+      dest: '/etc/yum.repos.d/docker-ce.repo'
+      owner: root
+      group: root
+      mode: 0644
+  
+  - name: ensure a list of packages installed
+    yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - containerd.io-1.2.13
+      - docker-ce-19.03.11
+      - docker-ce-cli-19.03.11
+  
+  - name: Create Directory
+    file:
+      name: /etc/docker
+      state: directory
+      mode: '0755'
+  - name: Adding the json file
+    copy:
+      dest: "/etc/docker/daemon.json"
+      content: >
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2",
+          "storage-opts": [
+            "overlay2.override_kernel_check=true"
+          ]
+        }
+  - name: Create Directory
+    file:
+      name: /etc/systemd/system/docker.service.d
+      state: directory
+      recurse: yes
+      mode: '0775'
+  - name: restart service docker on centos, in all cases, also issue daemon-reload to pick up config changes
+    systemd:
+       state: restarted
+       daemon_reload: yes
+       name: docker
+       enabled: yes
+  # Set ip forwarding on in /proc and in the sysctl file and reload if necessary
+  - name: Adding the sysctl entries
+    sysctl:
+      name: "{{ item }}"
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes
+    with_items:
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.bridge.bridge-nf-call-iptables
+  ######### Installing kubernetes
+  - name: Adding the kubenetes repo
+    yum_repository:
+      name: kubernetes
+      description: kubernetes YUM repo
+      baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+      gpgcheck: yes
+      gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      exclude: "kubelet kubeadm kubectl"
+  - name: Installing Kubernetes
+    yum:
+      name: "{{ packages }}"
+      state: present
+      disable_excludes: kubernetes
+    vars:
+      packages:
+        - kubelet 
+        - kubeadm 
+        - kubectl
+  - name: Enable and start kubelet
+    systemd:
+       name: kubelet
+       state: started
+       enabled: yes

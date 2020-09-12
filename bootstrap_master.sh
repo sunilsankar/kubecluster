@@ -46,4 +46,5 @@ data:
       protocol: layer2
       addresses:
       - 192.168.30.20-192.168.30.50
+EOF
 "

@@ -18,7 +18,11 @@ Vagrant.configure("2") do |config|
   config.hostmanager.manage_guest = false
   config.hostmanager.include_offline = true
   config.hostmanager.ignore_private_ip = false
-  config.vm.provision "shell", path: "bootstrap.sh"
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "ansible/pre.yaml"
+  end    
+  
+
     config.vm.define "kubemaster", primary: true do |awx|
       awx.vm.box = "centos/7"
       awx.vm.hostname = 'kubemaster'
@@ -30,7 +34,11 @@ Vagrant.configure("2") do |config|
       domain.nested = true
     #  domain.storage :file, :size => '100G', :type => 'raw'
     end
-    awx.vm.provision "shell", path: "bootstrap_master.sh"
+    awx.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/master.yaml"
+    end    
+    
+
       end
       config.vm.define "client1", primary: true do |client1|
         client1.vm.box = "centos/7"
@@ -44,7 +52,11 @@ Vagrant.configure("2") do |config|
         domain.nested = true
    #  #   domain.storage :file, :size => '100G', :type => 'raw'
       end
-      client1.vm.provision "shell", path: "bootstrap_client.sh"
+      client1.vm.provision "ansible_local" do |ansible|
+        ansible.playbook = "ansible/node.yaml"
+      end    
+      
+  
         end
         config.vm.define "client2", primary: true do |client1|
           client1.vm.box = "centos/7"
@@ -58,6 +70,9 @@ Vagrant.configure("2") do |config|
           domain.nested = true
      #  #   domain.storage :file, :size => '100G', :type => 'raw'
         end
-        client1.vm.provision "shell", path: "bootstrap_client.sh"
+        client1.vm.provision "ansible_local" do |ansible|
+          ansible.playbook = "ansible/node.yaml"
+        end    
+           
           end
     end
