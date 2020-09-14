@@ -1,3 +1,4 @@
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 Vagrant.configure("2") do |config|
   config.ssh.insert_key = false
    config.vm.provision "ansible_local" do |ansible|
