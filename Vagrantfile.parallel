@@ -1,13 +1,14 @@
 ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 Vagrant.configure("2") do |config|
   config.ssh.insert_key = false
+   config.vm.synced_folder "./", "/vagrant"
    config.vm.provision "ansible_local" do |ansible|
     ansible.playbook = "ansible/pre.yaml"
   end
     config.vm.define "kubemaster", primary: true do |awx|
-      awx.vm.box = "bento/centos-7.8"
+      awx.vm.box = "generic/ubuntu2004"
       awx.vm.hostname = 'kubemaster'
-      awx.vm.network :private_network, ip: "192.168.30.200"
+      awx.vm.network :private_network, ip: "172.16.16.100"
       awx.vm.provider "parallels" do |domain|
         domain.memory = 2048
       domain.cpus = 2
@@ -20,10 +21,10 @@ Vagrant.configure("2") do |config|
 
       end
       config.vm.define "client1", primary: true do |client1|
-        client1.vm.box = "bento/centos-7.8"
+        client1.vm.box = "generic/ubuntu2004"
       client1.vm.hostname = 'kubeclient1'
     #
-       client1.vm.network :private_network, ip: "192.168.30.201"
+       client1.vm.network :private_network, ip: "172.16.16.101"
           client1.vm.provider "parallels" do |domain|
           domain.memory = 1024
         domain.cpus = 2
@@ -36,10 +37,10 @@ Vagrant.configure("2") do |config|
 
         end
         config.vm.define "client2", primary: true do |client1|
-          client1.vm.box = "bento/centos-7.7"
+          client1.vm.box = "generic/ubuntu2004"
         client1.vm.hostname = 'kubeclient2'
       #
-         client1.vm.network :private_network, ip: "192.168.30.202"
+         client1.vm.network :private_network, ip: "172.16.16.102"
             client1.vm.provider "parallels" do |domain|
             domain.memory = 1024
           domain.cpus = 2

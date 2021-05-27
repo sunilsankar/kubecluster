@@ -1,16 +1,19 @@
 - hosts: all
   become: yes
   tasks:
-  - name: ensure a list of packages installed
-    yum:
+  - name: Installing containerd
+    apt:
       name: "{{ packages }}"
+      state: present
     vars:
       packages:
-      - epel-release
-      - sshpass
+        - sshpass
+      update_cache: yes
+
   - name: Copy sshpass
     shell:
-      cmd: sshpass -p "vagrant" scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no 192.168.30.200:/tmp/join-command /tmp/joincluster.sh 
-
+      cmd: sshpass -p "vagrant" scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no 172.16.16.100:/tmp/join-command /tmp/joincluster.sh 
+    become_user: vagrant
   - name: Join the node to cluster
-    command: sh /tmp/joincluster.sh
+    command: /bin/sh /tmp/joincluster.sh
+    
